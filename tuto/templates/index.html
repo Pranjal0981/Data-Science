@@ -1,0 +1,197 @@
+<!doctype html>
+<html>
+<head>
+	<title>CRUST</title>
+	<!-- Include jQuery -->
+	<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>	
+	<!-- Include jQuery UI -->
+	<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	
+	<link rel="stylesheet" href="https://cdn.datatables.net/2.0.0/css/dataTables.dataTables.css" />
+	<script src="https://cdn.datatables.net/2.0.0/js/dataTables.js"></script>	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dc/3.1.0/dc.min.css" />
+	<link href="https://unpkg.com/tabulator-tables@4.4.1/dist/css/tabulator.min.css" rel="stylesheet">
+	<script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.4.1/dist/js/tabulator.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/crossfilter2/1.4.7/crossfilter.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.9.7/d3.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/dc/3.1.0/dc.min.js"></script>	
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+	
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+
+
+	<style>
+            body { font-size: 0.8rem; font-family: 'Lato', sans-serif; background: #fafafa; color: #555555;}
+           
+            .dc-select-menu { width: 30%; font-size: 1.0rem;}
+			select {background: #060F16;color:#FAFBFB}
+			#loading-overlay {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(255, 255, 255, 0.8);
+			z-index: 1000;
+			display: flex; /* Use flexbox for centering */
+			justify-content: center;
+			align-items: center;
+			}
+
+			.loading-spinner {
+			border: 12px solid #f3f3f3; /* Increased border thickness */
+			border-top: 12px solid #3498db; /* Increased border thickness */
+			border-radius: 50%;
+			width: 80px; /* Increased width */
+			height: 80px; /* Increased height */
+			animation: spin 1s linear infinite;
+			}
+
+
+			@keyframes spin {
+			0% { 
+				transform: rotate(0deg); 
+			}
+			100% { 
+				transform: rotate(360deg); 
+			}
+			}
+			div.dt-container .dt-input {
+				border: 1px solid #aaa;
+				border-radius: 3px;
+				padding: 5px;
+				background-color: #010304;
+				color: inherit;
+			}
+            table {
+            border: 2px solid white; /* Set border width and color */
+            /* background-color: grey; */
+            border-collapse: collapse; /* Collapse table borders */
+        }
+			#myTable th {
+            text-align: left;
+            border: 1px solid white; /* Set border for table cells */
+            padding: 8px; /* Add padding for better spacing */
+        	}	
+			#myTable td {
+            text-align: left;
+            border: 1px solid white; /* Set border for table cells */
+            padding: 8px; /* Add padding for better spacing */
+        	}
+            .smaller-text {
+                font-size: smaller; /* You can adjust the size as needed */
+            }
+			#chart_HeatMap {overflow: auto;}
+			a.ddis {color:#F2F3F3}
+            .dc-chart g.node text {fill:#FAFBFB;}
+			.dc-chart g.row text {fill:#FAFBFB;}
+			.dc-chart g.chart-body { clip-path: none;}
+            .x-axis-label {fill:#FAFBFB;color: #F2F3F3;}
+			.y-axis-label {fill:#FAFBFB;color: #F2F3F3;}
+            g.rows.axis text{  display: inline-block;
+			fill: white;max-width: 150px; /* Adjusted maximum width */
+			overflow: hidden;
+			font-stretch: ultra-condensed;
+			white-space: nowrap;
+			text-overflow: ellipsis;}
+            g.cols.axis text{ 
+                fill: white;
+				writing-mode: vertical-lr;
+				/* font-stretch: ultra-condensed; */
+				/* transform: translateY(3em); */
+			}
+			/* CSS for grey color arrow */
+            .dt-column-order {
+                color: white !important;/* Set color of the arrow to grey */
+            }
+			.heatmap-container {
+				display: flex;
+				position: relative;
+				width: 100%;
+				height: 100%;
+				overflow: hidden;
+			}
+
+			.chart-container {
+				position: absolute;
+				top: 0;
+				left: 180px; /* Same as the width of y-axis-container */
+				right: 0;
+				bottom: 0;
+				overflow: auto;
+			}
+
+			.floating-x-axis {
+				position: absolute;
+				top: 150;
+				background-color: #fff;
+				border:1px solid black;
+				z-index: 1;
+			}
+			
+		
+	</style>
+</head>
+<body class="container-fluid  text-light" style="background:#081200">
+	  <!-- Loading overlay -->
+	  <div id="loading-overlay">
+		<!-- <div class="loading-spinner"></div> -->
+	  </div>
+
+
+	<div class="jumbotron p-2" style="background: #060F16;color: #F2F3F3;"> 
+		<div style="display:inline-block; float: left;">
+			<h3 style="font-weight: normal; font-style: normal; text-decoration: none;text-align:left">Customers vs Release Usage based on Support Tickets (CRUST)</h3>
+			<div style="font-size: small;"><i>
+				The heatmap shows which customer is using or used what all realeases.  <span id="hdate" ></span></i></div>
+		</div>
+		<div style="display:inline-block; float: right;">
+			<h6 class="right"> <a class="ddis" href="mailto:DDIS_GlobalProgramManagement@Mentor.com">Created & Managed by - Technical Program Team</a></h6>		
+			<button type="button" class="btn btn-primary btn-sm" style="float:right;" onclick='javascript:dc.filterAll();dc.redrawAll();'>Reset </button>	  
+		</div>
+	</div>
+
+	<br><br>
+	
+    <div class="widget d-flex xjustify-content-between">
+		
+		<div class="mx-2 my-auto flex-fill" id="select3" style="min-width: 40%;"></div>
+		<!-- <div class="mx-2 my-auto flex-fill" id="select6"><span class="strong">AE Person</span></div> -->
+		<!--<div class="mx-2 my-auto flex-fill" id="select_release"><span class="strong">Users</span></div>
+		<div class='mx-2 dc-data-count mx-0'> <span class='filter-count'></span> displayed out of <span class='total-count'></span> runs.  </div> -->
+	</div>  
+	<br>
+	<div class="d-flex justify-content-around flex-wrap">
+		<p><h7>The intensity of red color increases with increase in issues filed.</h7></p>
+        <div class="widget w-100" style="border: 2px solid #f3f3f3; overflow: auto;">
+            <div style="text-align: center;background:#0A3039;" class="p-3">Customers VS Release Version</div>
+            <div id="chart_HeatMap_wrapper" class="chart-wrapper" style="height:1250px; overflow: auto;">
+                <div id="chart_HeatMap" class="chart dc-chart" style="background:#0A3039;"></div>
+				<div id="floating-x-axis" class="floating-x-axis"></div>
+            </div>
+			<!-- <div class="heatmap-container">
+				<div class="y-axis-container">
+					<div id="y-axis"></div>
+				</div>
+				<div class="chart-container">
+					<div id="floating-x-axis"></div>
+					<div id="chart_HeatMap"></div>
+				</div>
+			</div> -->
+			
+			  
+        </div>
+        
+	
+	</div>
+   
+		<!--remove first slash for ddis make it static-->
+	<script src="script.js"></script>
+</body>
+
+</html>
